@@ -3,25 +3,22 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Mandelbrot Explorer — Single File</title>
+  <title>Mandelbrot Explorer</title>
   <style>
     :root {
       --bg1: #0d1117;
-      --bg2: #161b22;
-      --panel-bg: rgba(38, 43, 51, 0.4);
+      --panel-bg: rgba(22, 27, 34, 0.7);
       --panel-border: rgba(255, 255, 255, 0.1);
       --text-primary: #e6edf3;
       --text-muted: #8b949e;
       --accent: #58a6ff;
       --accent-hover: #79c0ff;
-      --shadow-color: rgba(0, 0, 0, 0.5);
+      --shadow-color: rgba(0, 0, 0, 0.4);
       --max-width: 1200px;
     }
 
-    @keyframes background-pan {
-      0% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
+    *, *::before, *::after {
+      box-sizing: border-box;
     }
 
     html, body {
@@ -29,9 +26,6 @@
       margin: 0;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
       background-color: var(--bg1);
-      background-image: radial-gradient(at 20% 20%, hsla(212, 60%, 25%, 0.3) 0px, transparent 50%),
-                        radial-gradient(at 80% 20%, hsla(280, 55%, 30%, 0.3) 0px, transparent 50%),
-                        radial-gradient(at 50% 80%, hsla(180, 60%, 25%, 0.3) 0px, transparent 50%);
       color: var(--text-primary);
       overflow-x: hidden;
     }
@@ -40,7 +34,6 @@
       max-width: var(--max-width);
       margin: 24px auto;
       padding: 16px;
-      box-sizing: border-box;
     }
 
     header {
@@ -50,22 +43,9 @@
       margin-bottom: 24px;
     }
 
-    header svg {
-      flex-shrink: 0;
-    }
-
-    h1 {
-      font-size: 24px;
-      font-weight: 600;
-      margin: 0;
-      letter-spacing: -0.5px;
-    }
-    
-    p.lead {
-      margin: 4px 0 0;
-      color: var(--text-muted);
-      font-size: 15px;
-    }
+    header svg { flex-shrink: 0; }
+    h1 { font-size: 24px; font-weight: 600; margin: 0; letter-spacing: -0.5px; }
+    p.lead { margin: 4px 0 0; color: var(--text-muted); font-size: 15px; }
 
     .grid {
       display: grid;
@@ -73,12 +53,6 @@
       gap: 24px;
     }
     
-    @media (max-width: 960px) {
-      .grid {
-        grid-template-columns: 1fr;
-      }
-    }
-
     .card {
       background: var(--panel-bg);
       backdrop-filter: blur(12px);
@@ -89,146 +63,81 @@
       box-shadow: 0 8px 32px 0 var(--shadow-color);
     }
 
-    /* Canvas Area */
-    .viewer {
+    .viewer-card {
       display: flex;
       flex-direction: column;
-      height: calc(100vh - 250px);
-      min-height: 400px;
-      padding: 12px;
+      height: 80vh;
+      min-height: 450px;
     }
     
-    @media (max-width: 960px) {
-      .viewer {
-        height: 55vh;
-      }
+    .canvas-container {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 16px;
     }
 
     canvas {
-      flex: 1;
-      border-radius: 10px;
       display: block;
-      width: 100%;
-      height: 100%;
-      background: #000;
+      max-width: 100%;
+      max-height: 100%;
+      border-radius: 8px;
+      background-color: #000;
     }
 
-    /* Controls */
-    .controls {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      margin-top: 16px;
-    }
-
-    label {
-      font-size: 14px;
-      color: var(--text-muted);
-    }
-
-    .row {
-      display: flex;
-      gap: 12px;
-      align-items: center;
-    }
+    .controls { display: flex; flex-direction: column; gap: 12px; }
+    label { font-size: 14px; color: var(--text-muted); }
+    .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
 
     select, input[type=number], .btn {
-      padding: 8px 12px;
-      border-radius: 8px;
-      border: 1px solid var(--panel-border);
-      background: rgba(13, 17, 23, 0.5);
-      color: inherit;
-      font-size: 14px;
+      padding: 8px 12px; border-radius: 8px; border: 1px solid var(--panel-border);
+      background: rgba(13, 17, 23, 0.8); color: inherit; font-size: 14px;
       transition: all 0.2s ease;
     }
     
     select:focus, input[type=number]:focus {
-        outline: none;
-        border-color: var(--accent);
-        box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.3);
+      outline: none; border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.3);
     }
 
-    .btn {
-      cursor: pointer;
-      font-weight: 500;
-    }
-    
-    .btn:hover {
-        background: rgba(30, 36, 44, 0.8);
-        border-color: rgba(255, 255, 255, 0.2);
-    }
-
-    .btn-primary {
-        background: var(--accent);
-        color: var(--bg1);
-        border-color: var(--accent);
-        font-weight: 600;
-    }
-
-    .btn-primary:hover {
-        background: var(--accent-hover);
-        border-color: var(--accent-hover);
-    }
+    .btn { cursor: pointer; font-weight: 500; }
+    .btn:hover { background: rgba(30, 36, 44, 0.8); border-color: rgba(255, 255, 255, 0.2); }
+    .btn-primary { background: var(--accent); color: var(--bg1); border-color: var(--accent); font-weight: 600; }
+    .btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
 
     input[type=range] {
-      -webkit-appearance: none;
-      appearance: none;
-      width: 100%;
-      height: 6px;
-      background: rgba(13, 17, 23, 0.5);
-      border-radius: 5px;
-      outline: none;
-      flex: 1;
+      -webkit-appearance: none; appearance: none; width: 100%; height: 6px;
+      background: rgba(13, 17, 23, 0.8); border-radius: 5px; outline: none; flex: 1;
     }
-
     input[type=range]::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      appearance: none;
-      width: 18px;
-      height: 18px;
-      background: var(--accent);
-      cursor: pointer;
-      border-radius: 50%;
-      border: 3px solid var(--bg1);
-      transition: background 0.2s ease;
+      -webkit-appearance: none; appearance: none; width: 18px; height: 18px;
+      background: var(--accent); cursor: pointer; border-radius: 50%;
+      border: 3px solid var(--bg1); transition: background 0.2s ease;
     }
-    
-    input[type=range]::-webkit-slider-thumb:hover {
-        background: var(--accent-hover);
-    }
+    input[type=range]::-webkit-slider-thumb:hover { background: var(--accent-hover); }
 
-    .small {
-      font-size: 13px;
-      color: var(--text-muted);
-    }
-
-    /* Info & Description */
+    .small { font-size: 13px; color: var(--text-muted); }
     h2 { font-weight: 600; margin-top: 0; letter-spacing: -0.5px;}
     h3 { font-weight: 600; border-bottom: 1px solid var(--panel-border); padding-bottom: 8px; margin-top: 24px; margin-bottom: 12px; }
     p, li { line-height: 1.6; color: var(--text-muted); }
     ul, ol { padding-left: 20px; }
 
-    .meta {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin: 16px 0;
-    }
-    
+    .meta { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0; }
     .meta span {
-      background: rgba(13, 17, 23, 0.5);
-      padding: 6px 10px;
-      border-radius: 8px;
-      font-size: 13px;
-      border: 1px solid var(--panel-border);
+      background: rgba(13, 17, 23, 0.8); padding: 6px 10px; border-radius: 8px;
+      font-size: 13px; border: 1px solid var(--panel-border);
     }
 
     footer {
-      margin-top: 24px;
-      padding: 16px;
-      font-size: 13px;
-      color: var(--text-muted);
-      text-align: center;
+      margin-top: 24px; padding: 16px; font-size: 13px;
+      color: var(--text-muted); text-align: center;
+    }
+    
+    @media (max-width: 960px) {
+      .grid { grid-template-columns: 1fr; }
+      .viewer-card { height: 65vh; }
     }
 
     @media (max-width: 600px) {
@@ -236,6 +145,8 @@
       h1 { font-size: 20px; }
       .grid { gap: 16px; }
       .card { padding: 16px; }
+      .viewer-card { height: 60vh; min-height: 400px; }
+      .row-buttons .small { display: none; }
     }
   </style>
 </head>
@@ -248,18 +159,20 @@
       </svg>
       <div>
         <h1>Mandelbrot Set</h1>
-        <p class="lead">The beautiful mathematical Equation</p>
+        <p class="lead">A Beauty of mathematics over the imaginary plane.</p>
       </div>
     </header>
 
     <div class="grid">
-      <div class="card viewer">
-        <canvas id="mandelCanvas"></canvas>
+      <div class="card viewer-card">
+        <div class="canvas-container">
+          <canvas id="mandelCanvas"></canvas>
+        </div>
 
         <div class="controls">
             <div class="row">
-                <label class="small" style="width:70px">Colormap</label>
-                <select id="palette">
+                <label class="small" style="min-width:70px">Colormap</label>
+                <select id="palette" style="flex:1;">
                   <option value="twilight">Twilight</option>
                   <option value="turbo">Turbo</option>
                   <option value="plasma">Plasma</option>
@@ -267,7 +180,7 @@
                   <option value="rainbow">Rainbow</option>
                   <option value="grayscale">Grayscale</option>
                 </select>
-                <label class="small" style="width:70px;text-align:right;">Quality</label>
+                <label class="small" style="min-width:50px;text-align:right;">Quality</label>
                 <select id="quality" style="flex-shrink:0;">
                     <option value="1">High</option>
                     <option value="2">Medium</option>
@@ -276,49 +189,43 @@
             </div>
             
             <div class="row">
-              <label class="small" style="width:70px">Max iter.</label>
+              <label class="small" style="min-width:70px">Max iter.</label>
               <input id="maxIter" type="range" min="100" max="3000" step="50" value="800">
-              <div style="width:64px; text-align:right" id="iterLabel">800</div>
+              <div style="width:50px; text-align:right" id="iterLabel">800</div>
             </div>
 
-            <div class="row" style="margin-top: 8px;">
-              <div class="small" style="flex:1;">Click to zoom in, Right-click to zoom out.</div>
+            <div class="row row-buttons" style="margin-top: 8px;">
+              <div class="small" style="flex:1;">Click to zoom in, Right-click out.</div>
               <button id="resetBtn" class="btn">Reset</button>
-              <button id="downloadBtn" class="btn btn-primary">Download PNG</button>
+              <button id="downloadBtn" class="btn btn-primary">Download</button>
             </div>
              <div class="row small" style="justify-content:center; margin-top:4px;" id="coords">Domain: [-2,1] • Range: [-1.5,1.5]</div>
         </div>
       </div>
 
       <aside class="card">
-        <h2>About the Mandelbrot Set</h2>
+        <h2>About the Set</h2>
         <div class="meta">
           <span>Domain (Re): <strong>[-2, 1]</strong></span>
           <span>Range (Im): <strong>[-1.5, 1.5]</strong></span>
           <span>Equation: <strong>zₙ₊₁ = zₙ² + c</strong></span>
         </div>
-
-        <p>The coloring of the plot indicates how quickly a point <strong>c</strong> in the complex plane escapes to infinity under the iteration. Points that do not escape (within the iteration limit) form the Mandelbrot set itself, drawn in black.</p>
-
-        <h3>Controls Guide</h3>
+        <p>The coloring indicates how quickly a point escapes to infinity. Points that don't escape form the Mandelbrot set, shown in black.</p>
+        <h3>Controls</h3>
         <ul>
-          <li><strong>Colormap:</strong> Changes the color scheme used for the escape-time gradient.</li>
-          <li><strong>Max Iterations:</strong> Increases the calculation depth, revealing finer details, especially when zoomed in. Higher values are slower.</li>
-          <li><strong>Quality:</strong> Renders at a lower resolution for faster interaction, ideal for navigation or on slower devices.</li>
+          <li><strong>Colormap:</strong> Changes the color scheme for the gradient.</li>
+          <li><strong>Max Iterations:</strong> Increases calculation depth, revealing finer details.</li>
+          <li><strong>Quality:</strong> Renders at a lower resolution for faster interaction.</li>
         </ul>
-
-        <h3>History & Mathematics</h3>
-        <p>
-          First visualized by Benoît Mandelbrot in 1978, the set's mathematical roots are in the early 20th-century work of French mathematicians Pierre Fatou and Gaston Julia on complex dynamics. It is a stunning example of how a simple, non-linear equation can generate infinite complexity.
-        </p>
+        <h3>History</h3>
+        <p>First visualized by Benoît Mandelbrot in 1978, the set's mathematical roots are in the early 20th-century work of Pierre Fatou and Gaston Julia.</p>
       </aside>
     </div>
 
-    <footer class="card">Double-click the canvas to toggle an auto-zoom animation. This entire app is a single HTML file — feel free to save and use it offline.</footer>
+
   </div>
 
   <script>
-    // The JavaScript logic remains unchanged as it's purely for functionality.
     const canvas = document.getElementById('mandelCanvas');
     const ctx = canvas.getContext('2d');
     const paletteSelect = document.getElementById('palette');
@@ -333,187 +240,104 @@
     const initialView = {...view};
     let maxIter = Number(maxIterSlider.value);
     let quality = Number(qualitySelect.value);
-    let autoZoom = false;
 
     function fitCanvas(){
-      const rect = canvas.parentElement.getBoundingClientRect();
-      const dpr = window.devicePixelRatio || 1;
-      const controlsHeight = document.querySelector('.controls').offsetHeight;
-      const availableHeight = rect.height - controlsHeight - 32; // 32px for padding/margins
-      const availableWidth = rect.width - 24; // 24px for padding
-      
-      const viewAspectRatio = (view.xmax - view.xmin) / (view.ymax - view.ymin);
-      let newWidth = availableWidth;
-      let newHeight = newWidth / viewAspectRatio;
+        const container = canvas.parentElement;
+        const dpr = window.devicePixelRatio || 1;
+        const containerRect = container.getBoundingClientRect();
+        const availableWidth = containerRect.width;
+        const availableHeight = containerRect.height;
+        
+        const viewAspectRatio = (view.xmax - view.xmin) / (view.ymax - view.ymin);
+        
+        let newWidth = availableWidth;
+        let newHeight = newWidth / viewAspectRatio;
 
-      if (newHeight > availableHeight) {
-          newHeight = availableHeight;
-          newWidth = newHeight * viewAspectRatio;
-      }
+        if (newHeight > availableHeight) {
+            newHeight = availableHeight;
+            newWidth = newHeight * viewAspectRatio;
+        }
 
-      canvas.width = Math.floor(newWidth * dpr);
-      canvas.height = Math.floor(newHeight * dpr);
-      canvas.style.width = newWidth + 'px';
-      canvas.style.height = newHeight + 'px';
-      ctx.setTransform(dpr,0,0,dpr,0,0);
+        canvas.style.width = newWidth + 'px';
+        canvas.style.height = newHeight + 'px';
+        canvas.width = Math.floor(newWidth * dpr);
+        canvas.height = Math.floor(newHeight * dpr);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     }
 
     function palette(name, t){
-      // t in [0,1) continuous
-      if(name==='twilight'){
-        // a pleasant cyclic palette using HSL
-        const h = (360 * (0.7 + 0.6 * Math.sin(2*Math.PI*t))) % 360;
-        return `hsl(${h}deg 90% ${50 - 15*Math.cos(2*Math.PI*t)}%)`;
-      }
-      if(name==='turbo'){
-        // approximate turbo via HSV-like mapping
-        const r = Math.floor(255*Math.max(0, Math.sin(Math.PI*t)));
-        const g = Math.floor(200*(0.5+0.5*Math.cos(2*Math.PI*t)));
-        const b = Math.floor(255*(1 - Math.abs(2*t-1)));
-        return `rgb(${r},${g},${b})`;
-      }
-      if(name==='plasma'){
-        const r = Math.floor(255*Math.pow(t,0.3));
-        const g = Math.floor(255*Math.pow(t,0.6));
-        const b = Math.floor(255*Math.pow(1-t,0.8));
-        return `rgb(${r},${g},${b})`;
-      }
-      if(name==='inferno'){
-        const r = Math.floor(255*Math.pow(t,0.2));
-        const g = Math.floor(200*Math.pow(t,0.6));
-        const b = Math.floor(120*Math.pow(t,1.2));
-        return `rgb(${r},${g},${b})`;
-      }
-      if(name==='rainbow'){
-        const h = Math.floor(360 * t);
-        return `hsl(${h}deg 90% 55%)`;
-      }
-      // grayscale
-      const v = Math.floor(255 * t);
-      return `rgb(${v},${v},${v})`;
+      if(name==='twilight'){ const h = (360*(0.7+0.6*Math.sin(2*Math.PI*t)))%360; return `hsl(${h}deg 90% ${50-15*Math.cos(2*Math.PI*t)}%)`;}
+      if(name==='turbo'){ const r=Math.floor(255*Math.max(0,Math.sin(Math.PI*t))); const g=Math.floor(200*(0.5+0.5*Math.cos(2*Math.PI*t))); const b=Math.floor(255*(1-Math.abs(2*t-1))); return `rgb(${r},${g},${b})`;}
+      if(name==='plasma'){ const r=Math.floor(255*Math.pow(t,0.3)); const g=Math.floor(255*Math.pow(t,0.6)); const b=Math.floor(255*Math.pow(1-t,0.8)); return `rgb(${r},${g},${b})`;}
+      if(name==='inferno'){ const r=Math.floor(255*Math.pow(t,0.2)); const g=Math.floor(200*Math.pow(t,0.6)); const b=Math.floor(120*Math.pow(t,1.2)); return `rgb(${r},${g},${b})`;}
+      if(name==='rainbow'){ const h=Math.floor(360*t); return `hsl(${h}deg 90% 55%)`;}
+      const v=Math.floor(255*t); return `rgb(${v},${v},${v})`;
     }
 
     function render(){
       fitCanvas();
-      const W = canvas.width;
-      const H = canvas.height;
-      const img = ctx.createImageData(canvas.width, canvas.height);
-      const data = img.data;
-      const pxStep = quality; // sample every pxStep pixels
-      const paletteName = paletteSelect.value;
-      const maxit = maxIter;
+      const W = canvas.width; const H = canvas.height; const img = ctx.createImageData(W, H);
+      const data = img.data; const pxStep = quality; const paletteName = paletteSelect.value;
+      const maxit = maxIter; const rx = (view.xmax - view.xmin) / W; const ry = (view.ymax - view.ymin) / H;
 
-      const rx = (view.xmax - view.xmin) / canvas.width;
-      const ry = (view.ymax - view.ymin) / canvas.height;
-
-      for(let py=0; py<canvas.height; py+=pxStep){
-        const y = view.ymin + py * ry;
-        for(let px=0; px<canvas.width; px+=pxStep){
-          const x = view.xmin + px * rx;
-          let zx = 0.0, zy = 0.0;
-          let zx2 = 0.0, zy2 = 0.0;
-          let iter = 0;
-          while(zx2 + zy2 <= 4 && iter < maxit){
-            zy = 2*zx*zy + y;
-            zx = zx2 - zy2 + x;
-            zx2 = zx*zx; zy2 = zy*zy;
-            iter++;
-          }
-          let r=0,g=0,b=0,a=255;
-          if(iter>=maxit){
-            r=g=b=0;
-          } else {
-            const modZ = Math.sqrt(zx2+zy2);
-            const nu = iter + 1 - Math.log(Math.log(Math.max(modZ,1e-9)))/Math.log(2);
-            const t = Math.max(0, Math.min(1, nu / maxit));
-            const col = palette(paletteName, t);
-            if(col.startsWith('rgb')){
-              const nums = col.match(/\d+/g).map(Number);
-              [r,g,b] = nums;
-            } else if(col.startsWith('hsl')){
-              const parts = col.match(/[-+]?\d*\.?\d+/g).map(Number);
-              const h = parts[0]/360, s = parts[1]/100, l = parts[2]/100;
-              const q = l < 0.5 ? l*(1+s) : l+s - l*s;
-              const p = 2*l - q;
-              const hk = (tcol=>{let tc = h + tcol; if(tc<0)tc+=1; if(tc>1)tc-=1; if(tc<1/6) return p + (q-p)*6*tc; if(tc<1/2) return q; if(tc<2/3) return p + (q-p)*(2/3-tc)*6; return p; });
-              r = Math.floor(255*hk(1/3)); g = Math.floor(255*hk(0)); b = Math.floor(255*hk(-1/3));
+      for(let py=0; py<H; py+=pxStep){
+        const y = view.ymin + py*ry;
+        for(let px=0; px<W; px+=pxStep){
+          const x = view.xmin + px*rx;
+          let zx=0.0, zy=0.0, zx2=0.0, zy2=0.0; let iter=0;
+          while(zx2 + zy2 <= 4 && iter < maxit){ zy=2*zx*zy+y; zx=zx2-zy2+x; zx2=zx*zx; zy2=zy*zy; iter++; }
+          let r=0,g=0,b=0;
+          if(iter<maxit){
+            const modZ = Math.sqrt(zx2+zy2); const nu = iter+1-Math.log(Math.log(Math.max(modZ,1e-9)))/Math.log(2);
+            const t = Math.max(0,Math.min(1,nu/maxit)); const col = palette(paletteName, t);
+            if(col.startsWith('rgb')){[r,g,b]=col.match(/\d+/g).map(Number);}
+            else if(col.startsWith('hsl')){
+              const [h,s,l]=col.match(/[-+]?\d*\.?\d+/g).map(Number); const sat=s/100,lit=l/100;
+              const c=(1-Math.abs(2*lit-1))*sat,x=c*(1-Math.abs((h/60)%2-1)),m=lit-c/2;
+              let r1=0,g1=0,b1=0;
+              if(h<60){[r1,g1,b1]=[c,x,0];}else if(h<120){[r1,g1,b1]=[x,c,0];}else if(h<180){[r1,g1,b1]=[0,c,x];}else if(h<240){[r1,g1,b1]=[0,x,c];}else if(h<300){[r1,g1,b1]=[x,0,c];}else{[r1,g1,b1]=[c,0,x];}
+              r=Math.floor((r1+m)*255);g=Math.floor((g1+m)*255);b=Math.floor((b1+m)*255);
             }
           }
-
-          for(let dy=0; dy<pxStep; dy++){
-            for(let dx=0; dx<pxStep; dx++){
-              const ix = ((py+dy)*canvas.width + (px+dx)) * 4;
-              if(ix >= data.length) continue;
-              data[ix] = r; data[ix+1] = g; data[ix+2] = b; data[ix+3] = a;
-            }
-          }
+          for(let dy=0; dy<pxStep; dy++){ for(let dx=0; dx<pxStep; dx++){
+            if(py+dy<H && px+dx<W){ const ix=((py+dy)*W+(px+dx))*4; data[ix]=r;data[ix+1]=g;data[ix+2]=b;data[ix+3]=255; }
+          }}
         }
       }
-      ctx.putImageData(img, 0, 0);
+      ctx.putImageData(img,0,0);
       coordsLabel.innerHTML = `Domain: [${view.xmin.toFixed(4)}, ${view.xmax.toFixed(4)}] &nbsp;•&nbsp; Range: [${view.ymin.toFixed(4)}, ${view.ymax.toFixed(4)}]`;
     }
 
     let renderTimeout;
-    const debouncedRender = () => {
-        clearTimeout(renderTimeout);
-        renderTimeout = setTimeout(render, 50);
-    }
+    const debouncedRender = () => { clearTimeout(renderTimeout); renderTimeout = setTimeout(render, 100); }
     
     paletteSelect.addEventListener('change', render);
     maxIterSlider.addEventListener('input', ()=>{ maxIter = Number(maxIterSlider.value); iterLabel.textContent = maxIter; });
     maxIterSlider.addEventListener('change', render);
     qualitySelect.addEventListener('change', ()=>{ quality = Number(qualitySelect.value); render(); });
     resetBtn.addEventListener('click', ()=>{ view = {...initialView}; render(); });
-    downloadBtn.addEventListener('click', ()=>{
-      const link = document.createElement('a'); link.download = 'mandelbrot.png';
-      link.href = canvas.toDataURL('image/png'); link.click();
-    });
+    downloadBtn.addEventListener('click', ()=>{ const link = document.createElement('a'); link.download = 'mandelbrot.png'; link.href = canvas.toDataURL('image/png'); link.click(); });
 
-    let isTouch = false;
     let downTime = 0;
-    canvas.addEventListener('pointerdown', (ev)=>{
-      ev.preventDefault(); isTouch = ev.pointerType !== 'mouse';
-      downTime = performance.now();
-    });
-    
+    canvas.addEventListener('pointerdown', (ev)=>{ ev.preventDefault(); downTime = performance.now(); });
     canvas.addEventListener('pointerup', (ev)=>{
-      ev.preventDefault(); const dt = performance.now() - downTime;
-      const rect = canvas.getBoundingClientRect();
-      const cx = (ev.clientX - rect.left) / rect.width;
-      const cy = (ev.clientY - rect.top) / rect.height;
-      const x = view.xmin + cx*(view.xmax - view.xmin);
-      const y = view.ymin + cy*(view.ymax - view.ymin);
-
-      if(ev.button === 2 || (isTouch && dt > 500)){
-        const zx = (view.xmax - view.xmin) * 2.0;
-        const zy = (view.ymax - view.ymin) * 2.0;
-        view = { xmin: x - zx/2, xmax: x + zx/2, ymin: y - zy/2, ymax: y + zy/2 };
-        render();
-      } else {
-        const zx = (view.xmax - view.xmin) * 0.5;
-        const zy = (view.ymax - view.ymin) * 0.5;
-        view = { xmin: x - zx/2, xmax: x + zx/2, ymin: y - zy/2, ymax: y + zy/2 };
-        render();
+      ev.preventDefault(); const dt=performance.now()-downTime; const rect=canvas.getBoundingClientRect();
+      const cx=(ev.clientX-rect.left)/rect.width; const cy=(ev.clientY-rect.top)/rect.height;
+      const x=view.xmin+cx*(view.xmax-view.xmin); const y=view.ymin+cy*(view.ymax-view.ymin);
+      if(ev.button===2 || (ev.pointerType!=='mouse'&&dt>500)){
+        const zx=(view.xmax-view.xmin)*2.0; const zy=(view.ymax-view.ymin)*2.0;
+        view={xmin:x-zx/2,xmax:x+zx/2,ymin:y-zy/2,ymax:y+zy/2};
+      }else{
+        const zx=(view.xmax-view.xmin)*0.5; const zy=(view.ymax-view.ymin)*0.5;
+        view={xmin:x-zx/2,xmax:x+zx/2,ymin:y-zy/2,ymax:y+zy/2};
       }
+      render();
     });
 
-    canvas.addEventListener('dblclick', ()=>{ autoZoom = !autoZoom; if(autoZoom) animateZoom(); });
     canvas.addEventListener('contextmenu', (e)=>e.preventDefault());
 
-    function animateZoom(){
-      if(!autoZoom) return;
-      const cx = (view.xmin + view.xmax)/2;
-      const cy = (view.ymin + view.ymax)/2;
-      const zx = (view.xmax - view.xmin) * 0.96;
-      const zy = (view.ymax - view.ymin) * 0.96;
-      view = { xmin: cx - zx/2, xmax: cx + zx/2, ymin: cy - zy/2, ymax: cy + zy/2 };
-      render();
-      if((view.xmax - view.xmin) < 1e-12){ autoZoom = false; return; }
-      requestAnimationFrame(animateZoom);
-    }
-
     window.addEventListener('resize', debouncedRender);
-    render();
+    document.addEventListener('DOMContentLoaded', render);
   </script>
 </body>
 </html>
