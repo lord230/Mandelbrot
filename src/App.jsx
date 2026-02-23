@@ -8,6 +8,7 @@ export default function App() {
   const [palette, setPalette] = useState('twilight')
   const [maxIter, setMaxIter] = useState(800)
   const [quality, setQuality] = useState(1)
+  const [cycleOffset, setCycleOffset] = useState(0)
   const [resetKey, setResetKey] = useState(0)
 
   return (
@@ -20,6 +21,7 @@ export default function App() {
             palette={palette}
             maxIter={maxIter}
             quality={quality}
+            cycleOffset={cycleOffset}
             resetKey={resetKey}
           />
           <ControlPanel
@@ -29,6 +31,8 @@ export default function App() {
             onMaxIterChange={setMaxIter}
             quality={quality}
             onQualityChange={setQuality}
+            cycleOffset={cycleOffset}
+            onCycleOffsetChange={setCycleOffset}
             onReset={() => setResetKey(k => k + 1)}
           />
         </div>

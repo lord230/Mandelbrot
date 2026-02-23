@@ -97,7 +97,7 @@ function mandelbrotIter(x0, y0, maxIter) {
 }
 
 // ── Render a full frame
-function renderFrame({ W, H, xmin, xmax, ymin, ymax, maxIter, palette, pxStep }) {
+function renderFrame({ W, H, xmin, xmax, ymin, ymax, maxIter, palette, pxStep, cycleOffset }) {
     const buf = new Uint8ClampedArray(W * H * 4);
     const rx = (xmax - xmin) / W;
     const ry = (ymax - ymin) / H;
@@ -114,7 +114,8 @@ function renderFrame({ W, H, xmin, xmax, ymin, ymax, maxIter, palette, pxStep })
                 // Munafo smooth coloring — no re-iteration needed, we already have zx2/zy2
                 const modZ = Math.sqrt(zx2 + zy2);
                 const nu = iter + 1 - Math.log(Math.log(Math.max(modZ, 1e-9))) / LOG2;
-                const t = Math.max(0, Math.min(1, nu / maxIter));
+                // Apply cycleOffset so the palette can be rotated by the user
+                const t = ((Math.max(0, Math.min(1, nu / maxIter)) + (cycleOffset || 0)) % 1 + 1) % 1;
                 [r, g, b] = paletteRGB(palette, t);
             }
 
@@ -133,16 +134,16 @@ function renderFrame({ W, H, xmin, xmax, ymin, ymax, maxIter, palette, pxStep })
 
 // ── Worker message handler
 self.onmessage = function (e) {
-    const { id, W, H, xmin, xmax, ymin, ymax, maxIter, palette, quality } = e.data;
+    const { id, W, H, xmin, xmax, ymin, ymax, maxIter, palette, quality, cycleOffset } = e.data;
 
     // Phase 1: Coarse render (always fast — 4× or quality pixels)
     const coarseStep = Math.max(quality, 4);
-    const coarseBuf = renderFrame({ W, H, xmin, xmax, ymin, ymax, maxIter, palette, pxStep: coarseStep });
+    const coarseBuf = renderFrame({ W, H, xmin, xmax, ymin, ymax, maxIter, palette, pxStep: coarseStep, cycleOffset });
     self.postMessage({ id, phase: 'coarse', buf: coarseBuf, W, H }, [coarseBuf.buffer]);
 
     // Phase 2: If quality < coarseStep, render refined
     if (quality < coarseStep) {
-        const fineBuf = renderFrame({ W, H, xmin, xmax, ymin, ymax, maxIter, palette, pxStep: quality });
+        const fineBuf = renderFrame({ W, H, xmin, xmax, ymin, ymax, maxIter, palette, pxStep: quality, cycleOffset });
         self.postMessage({ id, phase: 'fine', buf: fineBuf, W, H }, [fineBuf.buffer]);
     }
 

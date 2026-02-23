@@ -15,6 +15,7 @@ export default function ControlPanel({
     palette, onPaletteChange,
     maxIter, onMaxIterChange,
     quality, onQualityChange,
+    cycleOffset, onCycleOffsetChange,
     onReset,
 }) {
     const handleDownload = () => {
@@ -98,6 +99,31 @@ export default function ControlPanel({
                     <span>50 (fast)</span>
                     <span>More iterations → finer detail</span>
                     <span>3000 (slow)</span>
+                </div>
+            </div>
+
+            {/* Palette Cycle Offset slider */}
+            <div className="slider-group">
+                <div className="control-label">
+                    <span>Palette Cycle Offset</span>
+                    <span className="control-label-value">{cycleOffset.toFixed(2)}</span>
+                </div>
+                <div className="range-track">
+                    <input
+                        id="cycleOffsetSlider"
+                        type="range"
+                        min={0}
+                        max={1}
+                        step={0.01}
+                        value={cycleOffset}
+                        onChange={e => onCycleOffsetChange(Number(e.target.value))}
+                        style={{
+                            background: `linear-gradient(to right, var(--purple) 0%, var(--purple) ${cycleOffset * 100}%, var(--border-medium) ${cycleOffset * 100}%, var(--border-medium) 100%)`
+                        }}
+                    />
+                </div>
+                <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
+                    Rotates the colour cycle without re-rendering
                 </div>
             </div>
 
